@@ -22,4 +22,7 @@ connection.connect((err) => {
   }
 });
 
+// Ubah ke promise wrapper
+const db = connection.promise();
+
 export default connection;
