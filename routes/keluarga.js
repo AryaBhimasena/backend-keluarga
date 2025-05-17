@@ -6,42 +6,33 @@ const router = express.Router();
 // GET /api/keluarga?nama=xxx
 router.get('/', async (req, res) => {
   try {
-    const namaParam = req.query.nama;
-    let sql, params;
+    const nama = req.query.nama || 'Siradzamunir Rahman';
 
-    if (namaParam) {
-      sql = `
-        SELECT *
-        FROM tbl_PRIBADI
-        WHERE LOWER(NamaLengkap) LIKE ?
-        LIMIT 1
-      `;
-      params = [`%${namaParam.toLowerCase()}%`];
-    } else {
-      sql = `
-        SELECT *
-        FROM tbl_PRIBADI
-        WHERE NamaLengkap = ?
-        LIMIT 1
-      `;
-      params = ['Siradzamunir Rahman'];
+    const sql = `
+      SELECT *
+      FROM tbl_PRIBADI
+      WHERE LOWER(NamaLengkap) LIKE ?
+      LIMIT 1
+    `;
+    const [rows] = await pool.query(sql, [`%${nama.toLowerCase()}%`]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Data tidak ditemukan' });
     }
 
-    const [rows] = await pool.query(sql, params);
-    res.json(rows);
+    res.json(rows[0]);
   } catch (err) {
-    console.error('DB Error:', err);
+    console.error('DB Error (GET /keluarga):', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // POST /api/keluarga
-// Body JSON: { NamaLengkap, Alamat, TanggalLahir }
 router.post('/', async (req, res) => {
   try {
-    const { NamaLengkap, Alamat, TanggalLahir } = req.body;
+    const { NamaLengkap, Alamat = null, TanggalLahir = null } = req.body;
 
-    if (!NamaLengkap) {
+    if (!NamaLengkap || NamaLengkap.trim() === '') {
       return res.status(400).json({ error: 'NamaLengkap wajib diisi' });
     }
 
@@ -49,23 +40,22 @@ router.post('/', async (req, res) => {
       INSERT INTO tbl_PRIBADI (NamaLengkap, Alamat, TanggalLahir)
       VALUES (?, ?, ?)
     `;
-    const [result] = await pool.query(sql, [NamaLengkap, Alamat || null, TanggalLahir || null]);
+    const [result] = await pool.query(sql, [NamaLengkap, Alamat, TanggalLahir]);
 
     res.status(201).json({ message: 'Data berhasil ditambahkan', insertId: result.insertId });
   } catch (err) {
-    console.error('DB Error:', err);
+    console.error('DB Error (POST /keluarga):', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 // PUT /api/keluarga/:id
-// Body JSON: { NamaLengkap, Alamat, TanggalLahir }
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { NamaLengkap, Alamat, TanggalLahir } = req.body;
+    const { NamaLengkap, Alamat = null, TanggalLahir = null } = req.body;
 
-    if (!NamaLengkap) {
+    if (!NamaLengkap || NamaLengkap.trim() === '') {
       return res.status(400).json({ error: 'NamaLengkap wajib diisi' });
     }
 
@@ -74,7 +64,7 @@ router.put('/:id', async (req, res) => {
       SET NamaLengkap = ?, Alamat = ?, TanggalLahir = ?
       WHERE id = ?
     `;
-    const [result] = await pool.query(sql, [NamaLengkap, Alamat || null, TanggalLahir || null, id]);
+    const [result] = await pool.query(sql, [NamaLengkap, Alamat, TanggalLahir, id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Data tidak ditemukan' });
@@ -82,7 +72,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({ message: 'Data berhasil diupdate' });
   } catch (err) {
-    console.error('DB Error:', err);
+    console.error('DB Error (PUT /keluarga/:id):', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
@@ -101,7 +91,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ message: 'Data berhasil dihapus' });
   } catch (err) {
-    console.error('DB Error:', err);
+    console.error('DB Error (DELETE /keluarga/:id):', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
