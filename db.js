@@ -15,4 +15,14 @@ const pool = mysql.createPool({
   connectTimeout: 10000, // timeout koneksi 10 detik
 });
 
+// Misalnya di file db.js
+connection.connect((err) => {
+  if (err) {
+    console.error('❌ Gagal konek DB:', err.message);
+    process.exit(1); // jangan biarkan lanjut jika DB gagal
+  } else {
+    console.log('✅ Koneksi ke database berhasil');
+  }
+});
+
 export default pool;
